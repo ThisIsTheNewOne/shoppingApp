@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: 'transparent',
-    margin: 64,
+    margin: 100,
   },
   button: {
     flex: 1,
