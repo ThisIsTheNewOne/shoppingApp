@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, Button, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 
 export default function PhotoTaker() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -21,19 +23,51 @@ export default function PhotoTaker() {
     );
   }
 
-  function toggleCameraFacing() {
+  const toggleCameraFacing = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
-  }
+  };
+
+  const takePhoto = async () => {
+    let options = {
+        quality: 0.1, // 0.1  to 1
+        base64: true,
+        exif: false,
+      };
+
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync(options);
+      if(photo?.uri !== undefined) {
+        setPhotoUri(photo?.uri);
+      }
+    }
+  };
+
+  const deletePhoto = () => {
+    setPhotoUri(null);
+  };
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <Text style={styles.text}>Flip Camera</Text>
-          </TouchableOpacity>
+      {photoUri ? (
+        <View style={styles.previewContainer}>
+          <Image source={{ uri: photoUri }} style={styles.previewImage} />
+          <View style={styles.deleteButton}>
+            <Button title="Delete Photo" onPress={deletePhoto} />
+          </View> 
         </View>
-      </CameraView>
+      ) : (
+        <CameraView
+          style={styles.camera}
+          // type={facing}
+          ref={cameraRef}
+        >
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={takePhoto}>
+              <Text style={styles.text}>Take Photo</Text>
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      )}
     </View>
   );
 }
@@ -42,6 +76,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    marginTop: 70
   },
   message: {
     textAlign: 'center',
@@ -51,19 +86,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonContainer: {
-    flex: 1,
     flexDirection: 'row',
-    backgroundColor: 'transparent',
-    margin: 100,
+    justifyContent: 'space-around',
+    marginBottom: 20,
   },
   button: {
-    flex: 1,
-    alignSelf: 'flex-end',
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
   },
   text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+    fontSize: 18,
+    color: '#000',
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    marginBottom: 90
+  },
+  previewImage: {
+    width: '100%',
+    height: '80%',
   },
 });
